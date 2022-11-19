@@ -3,7 +3,7 @@ use futures_util::Stream;
 use helix_core::{
     diagnostic::{DiagnosticTag, NumberOrString},
     path::get_relative_path,
-    pos_at_coords, syntax, Selection,
+    pos_at_coords, syntax, RopeBuilder, Selection,
 };
 use helix_lsp::{lsp, util::lsp_pos_to_pos, LspProgressMap};
 use helix_view::{
@@ -192,9 +192,25 @@ impl Application {
             let first = &args.files[0].0; // we know it's not empty
             if first.is_dir() {
                 std::env::set_current_dir(first).context("set current dir")?;
+
+                // let mut builder = RopeBuilder::new();
+
+                // builder.append("Hello ");
+                // builder.append("world!\n");
+                // builder.append("How's ");
+                // builder.append("it goin");
+                // builder.append("g?");
+
+                // let rope = builder.finish();
+
+                // _ = editor.new_file_from_rope(Action::VerticalSplit, rope)
+
                 editor.new_file(Action::VerticalSplit);
-                let picker = ui::file_picker(".".into(), &config.load().editor);
-                compositor.push(Box::new(overlayed(picker)));
+
+                let browser = ui::file_browser();
+                // let picker = ui::file_picker(".".into(), &config.load().editor);
+
+                compositor.push(Box::new(browser));
             } else {
                 let nr_of_files = args.files.len();
                 for (i, (file, pos)) in args.files.into_iter().enumerate() {

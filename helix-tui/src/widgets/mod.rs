@@ -5,18 +5,18 @@
 //!
 //! The available widgets are:
 //! - [`Block`]
-// //! - [`List`]
+//! - [`List`]
 // //! - [`Table`]
 //! - [`Paragraph`]
 
 mod block;
-// mod list;
+mod list;
 mod paragraph;
 mod reflow;
 mod table;
 
 pub use self::block::{Block, BorderType};
-// pub use self::list::{List, ListItem, ListState};
+pub use self::list::{List, ListItem, ListState};
 pub use self::paragraph::{Paragraph, Wrap};
 pub use self::table::{Cell, Row, Table, TableState};
 
@@ -47,4 +47,9 @@ pub trait Widget {
     /// Draws the current state of the widget in the given buffer. That the only method required to
     /// implement a custom widget.
     fn render(self, area: Rect, buf: &mut Buffer);
+}
+
+pub trait StatefulWidget {
+    type State;
+    fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State);
 }

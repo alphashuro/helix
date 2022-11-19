@@ -63,7 +63,8 @@
       };
     outputs = nci.lib.makeOutputs {
       root = ./.;
-      config = common: {
+      config = common: 
+        let frameworks = common.pkgs.darwin.apple_sdk.frameworks; in {
         outputs = {
           # rename helix-term to helix since it's our main package
           rename = {"helix-term" = "helix";};
@@ -79,10 +80,14 @@
           then gcc
           else clang;
         shell = {
+
           packages = with common.pkgs;
             [lld_13 cargo-flamegraph rust-analyzer]
             ++ (lib.optional (stdenv.isx86_64 && stdenv.isLinux) cargo-tarpaulin)
-            ++ (lib.optional stdenv.isLinux lldb);
+            ++ (lib.optional stdenv.isLinux lldb)
+            ++ (lib.optional stdenv.isDarwin frameworks.CoreFoundation)
+            ++ (lib.optional stdenv.isDarwin frameworks.CoreServices)
+            ++ (lib.optional stdenv.isDarwin frameworks.Security);
           env = [
             {
               name = "HELIX_RUNTIME";
@@ -97,6 +102,20 @@
               value =
                 if common.pkgs.stdenv.isLinux
                 then "-C link-arg=-fuse-ld=lld -C target-cpu=native -Clink-arg=-Wl,--no-rosegment"
+                else "";
+            }
+            {
+              name = "NIX_LDFLAGS";
+              value = 
+                if common.pkgs.stdenv.isDarwin
+                then "\"-F${frameworks.CoreFoundation}/Library/Frameworks -framework CoreFoundation ${builtins.getEnv "NIX_LDFLAGS"}\""
+                else "";
+            }
+            {
+              name = "LDFLAGS";
+              value = 
+                if common.pkgs.stdenv.isDarwin
+                then "\"-F${frameworks.CoreFoundation}/Library/Frameworks -framework CoreFoundation ${builtins.getEnv "LDFLAGS"}\""
                 else "";
             }
           ];
@@ -132,27 +151,34 @@
               // {override = makeOverridableHelix old;};
           in
             makeOverridableHelix old {};
-          overrides.fix-build.overrideAttrs = prev: {
-            src = filteredSource;
+          overrides.fix-build.overrideAttrs = prev: 
+            let frameworks = common.pkgs.darwin.apple_sdk.frameworks;
+            in {
+              src = filteredSource;
 
-            # disable fetching and building of tree-sitter grammars in the helix-term build.rs
-            HELIX_DISABLE_AUTO_GRAMMAR_BUILD = "1";
+              # disable fetching and building of tree-sitter grammars in the helix-term build.rs
+              HELIX_DISABLE_AUTO_GRAMMAR_BUILD = "1";
 
-            buildInputs = ncl.addBuildInputs prev [common.config.cCompiler.package.cc.lib];
+              buildInputs = ncl.addBuildInputs prev [
+                common.config.cCompiler.package.cc.lib 
+                frameworks.CoreFoundation
+                frameworks.CoreServices
+                frameworks.Security
+              ];
 
-            # link languages and theme toml files since helix-term expects them (for tests)
-            preConfigure = ''
-              ${prev.preConfigure or ""}
-              ${
-                lib.concatMapStringsSep
-                "\n"
-                (path: "ln -sf ${mkRootPath path} ..")
-                ["languages.toml" "theme.toml" "base16_theme.toml"]
-              }
-            '';
+              # link languages and theme toml files since helix-term expects them (for tests)
+              preConfigure = ''
+                ${prev.preConfigure or ""}
+                ${
+                  lib.concatMapStringsSep
+                  "\n"
+                  (path: "ln -sf ${mkRootPath path} ..")
+                  ["languages.toml" "theme.toml" "base16_theme.toml"]
+                }
+              '';
 
-            meta.mainProgram = "hx";
-          };
+              meta.mainProgram = "hx";
+            };
         };
       };
     };

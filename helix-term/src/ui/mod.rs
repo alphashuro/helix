@@ -1,5 +1,6 @@
 mod completion;
 pub(crate) mod editor;
+mod file_browser;
 mod fuzzy_match;
 mod info;
 pub mod lsp;
@@ -17,6 +18,7 @@ use crate::compositor::{Component, Compositor};
 use crate::job::{self, Callback};
 pub use completion::Completion;
 pub use editor::EditorView;
+pub use file_browser::FileBrowser;
 pub use markdown::Markdown;
 pub use menu::Menu;
 pub use picker::{FileLocation, FilePicker, Picker};
@@ -154,6 +156,11 @@ pub fn regex_prompt(
     prompt.recalculate_completion(cx.editor);
     // prompt
     cx.push_layer(Box::new(prompt));
+}
+
+pub fn file_browser() -> FileBrowser {
+    let browser = FileBrowser::new();
+    browser
 }
 
 pub fn file_picker(root: PathBuf, config: &helix_view::editor::Config) -> FilePicker<PathBuf> {

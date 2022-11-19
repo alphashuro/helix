@@ -1,12 +1,12 @@
 use crate::{
     buffer::Buffer,
-    layout::{Corner, Rect},
-    style::Style,
+    layout::Corner,
     text::Text,
     widgets::{Block, StatefulWidget, Widget},
 };
+use helix_core::unicode::width::UnicodeWidthStr;
+use helix_view::graphics::{Rect, Style};
 use std::iter::{self, Iterator};
-use unicode_width::UnicodeWidthStr;
 
 #[derive(Debug, Clone)]
 pub struct ListState {
